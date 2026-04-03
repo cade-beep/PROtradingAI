@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from pythonjsonlogger import jsonlogger
 from config.settings import settings
 from auth.token_manager import TokenManager
 from broker_api.kiwoom_client import KiwoomClient
@@ -15,11 +16,15 @@ from portfolio.portfolio import Portfolio
 from risk.risk import RiskManager
 from notifications.discord import DiscordNotifier
 
-# 로깅 기본 설정
+# 구조화된 JSON 로깅 설정
+logHandler = logging.StreamHandler(sys.stdout)
+logHandler.setFormatter(jsonlogger.JsonFormatter(
+    fmt='%(asctime)s %(name)s %(levelname)s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+))
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
+    handlers=[logHandler]
 )
 logger = logging.getLogger("runner.main")
 
@@ -45,7 +50,7 @@ async def consume_market_data(queue: asyncio.Queue, strategy: TradingStrategy, p
                     current_prices = {message['symbol']: price}
                     
                     if risk.check_order_risk(message['symbol'], qty, price, signal, portfolio, current_prices):
-                        if validator.validate_order(message['symbol'], qty, price, signal):
+                        if validator.validate_order(message['symbol'], qty, price, signal, portfolio, current_prices):
                             if portfolio.update_position(message['symbol'], qty, price, signal):
                                 order_res = await order_client.place_order(account_no, message['symbol'], qty, price, signal)
                                 if order_res.get('rt_cd') == '0':
@@ -82,7 +87,8 @@ async def main():
         market_data_client = MarketDataClient(token_manager)
         
         order_client = OrderEndpointClient(token_manager)
-        validator = PreTradeValidator()
+        risk = RiskManager()
+        validator = PreTradeValidator(risk_manager=risk)
         reconciler = OrderReconciler(token_manager)
         await reconciler.init_db()
         
@@ -123,7 +129,9 @@ async def main():
         order_type = "buy"
         
         # 4-1. Pre-trade validation (절대 건너뛰지 않음)
-        if validator.validate_order(symbol_to_trade, trade_qty, trade_price, order_type):
+        test_portfolio = Portfolio()
+        test_current_prices = {symbol_to_trade: trade_price}
+        if validator.validate_order(symbol_to_trade, trade_qty, trade_price, order_type, test_portfolio, test_current_prices):
             logger.info("유효성 검사 통과: 브로커 API로 주문을 전송합니다.")
             
             # 실제 주문 호출 (테스트 모드이므로 실제로 API 통신 시도 시 예외 또는 Mock 반환)

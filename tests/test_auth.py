@@ -4,6 +4,7 @@ import httpx
 from datetime import datetime
 from auth.token_manager import TokenManager
 from config.settings import settings
+from market_calendar import MarketCalendar
 
 @pytest.fixture
 def token_manager():
@@ -26,7 +27,7 @@ async def test_issue_token_success(token_manager):
     assert token == "mock_access_token_12345"
     assert token_manager._access_token == "mock_access_token_12345"
     assert token_manager._expires_at is not None
-    assert token_manager._expires_at > datetime.now()
+    assert token_manager._expires_at > MarketCalendar.get_current_kst_time()
 
 @pytest.mark.asyncio
 @respx.mock

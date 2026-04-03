@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from config.settings import settings
+from market_calendar import MarketCalendar
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class TokenManager:
         [au10001] Access token issuance
         """
         # 만료 전이면 캐시된 토큰 반환 (보수적으로 10분 전 만료 처리)
-        if self._access_token and self._expires_at and datetime.now() < self._expires_at - timedelta(minutes=10):
+        if self._access_token and self._expires_at and MarketCalendar.get_current_kst_time() < self._expires_at - timedelta(minutes=10):
             return self._access_token
 
         url = f"{self.host}/oauth2/token"
@@ -46,7 +47,7 @@ class TokenManager:
                 if not self._access_token:
                     raise ValueError("응답에 access_token이 없습니다.")
                 
-                self._expires_at = datetime.now() + timedelta(seconds=expires_in)
+                self._expires_at = MarketCalendar.get_current_kst_time() + timedelta(seconds=expires_in)
                 logger.info("성공: 토큰 발급 완료")
                 return self._access_token
 
