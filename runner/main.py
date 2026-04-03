@@ -10,6 +10,10 @@ from market_data.realtime import KiwoomWebSocketClient
 from broker_api.order_endpoints import OrderEndpointClient
 from order.validator import PreTradeValidator
 from order.reconciler import OrderReconciler
+from strategy.strategy import TradingStrategy
+from portfolio.portfolio import Portfolio
+from risk.risk import RiskManager
+from notifications.telegram import TelegramNotifier
 
 # 로깅 기본 설정
 logging.basicConfig(
@@ -19,21 +23,48 @@ logging.basicConfig(
 )
 logger = logging.getLogger("runner.main")
 
-async def consume_market_data(queue: asyncio.Queue):
+async def consume_market_data(queue: asyncio.Queue, strategy: TradingStrategy, portfolio: Portfolio, risk: RiskManager, order_client: OrderEndpointClient, validator: PreTradeValidator, reconciler: OrderReconciler, notifier: TelegramNotifier, account_no: str):
     """
     웹소켓으로부터 수신된 데이터(Pub/Sub의 Consumer 역할)를 처리하는 태스크
+    전략 분석 및 자동 주문 실행
     """
     logger.info("시장 데이터 컨슈머 태스크 시작")
     while True:
         try:
             message = await queue.get()
             logger.info(f"큐에서 실시간 데이터 처리 (Consumer): {message}")
-            # 추후 전략 모듈(Strategy)이나 포트폴리오 업데이트 로직으로 메시지 전달
+            
+            # 전략 업데이트 및 신호 생성
+            if 'symbol' in message and 'price' in message:
+                strategy.update_market_data(message['symbol'], message['price'])
+                signal = strategy.generate_signal(message['symbol'])
+                
+                if signal:
+                    qty = 1  # 단순화
+                    price = message['price']
+                    current_prices = {message['symbol']: price}
+                    
+                    if risk.check_order_risk(message['symbol'], qty, price, signal, portfolio, current_prices):
+                        if validator.validate_order(message['symbol'], qty, price, signal):
+                            if portfolio.update_position(message['symbol'], qty, price, signal):
+                                order_res = await order_client.place_order(account_no, message['symbol'], qty, price, signal)
+                                if order_res.get('rt_cd') == '0':
+                                    order_no = order_res.get('output', {}).get('ODNO', f"mock_{signal}_{message['symbol']}")
+                                    await reconciler.store_order(order_no, message['symbol'], qty, price, signal)
+                                    await notifier.notify_order(signal, message['symbol'], qty, price)
+                                    strategy.reset_signal(message['symbol'])
+                                else:
+                                    await notifier.notify_error(f"주문 실패: {order_res}")
+                    
+                    # 동기화
+                    await reconciler.reconcile_orders(account_no)
+            
             queue.task_done()
         except asyncio.CancelledError:
             break
         except Exception as e:
             logger.error(f"컨슈머 오류: {str(e)}")
+            await notifier.notify_error(str(e))
 
 async def main():
     logger.info("=== 시스템 시작: 통합 테스트 (REST API + WebSocket + Order Pipeline) ===")
@@ -48,11 +79,15 @@ async def main():
         token_manager = TokenManager()
         account_no = settings.kiwoom_account_no
         
-        orderable_client = OrderableAmountClient(token_manager)
-        market_data_client = MarketDataClient(token_manager)
         order_client = OrderEndpointClient(token_manager)
         validator = PreTradeValidator()
         reconciler = OrderReconciler(token_manager)
+        await reconciler.init_db()
+        
+        strategy = TradingStrategy()
+        portfolio = Portfolio()
+        risk = RiskManager()
+        notifier = TelegramNotifier()
         
         message_queue = asyncio.Queue()
         ws_client = KiwoomWebSocketClient(token_manager, message_queue)
@@ -60,7 +95,7 @@ async def main():
         # 2. 백그라운드 태스크 실행 (웹소켓 연결 및 큐 컨슈머)
         logger.info("--- 실시간 웹소켓 & Pub/Sub 백그라운드 구동 ---")
         ws_task = asyncio.create_task(ws_client.connect_and_listen())
-        consumer_task = asyncio.create_task(consume_market_data(message_queue))
+        consumer_task = asyncio.create_task(consume_market_data(message_queue, strategy, portfolio, risk, order_client, validator, reconciler, notifier, account_no))
         
         # 웹소켓이 연결될 수 있는 여유 시간 대기
         await asyncio.sleep(2)
@@ -105,6 +140,9 @@ async def main():
         # 5. 시스템 유지 및 정상 종료 (3초 대기 후 종료 처리)
         await asyncio.sleep(3)
         logger.info("테스트가 완료되었습니다. 리소스를 정리하고 종료합니다...")
+        
+        # 최종 손익 알림
+        await notifier.notify_pnl(portfolio.get_pnl({}))
         
         await ws_client.close()
         ws_task.cancel()
