@@ -89,6 +89,9 @@ class OrderReconciler:
             
             logger.info("주문 상태 동기화 완료")
         except Exception as e:
+            logger.error(f"주문 동기화 실패: {str(e)}")
+            raise
+
     async def store_order(self, order_no: str, symbol: str, qty: int, price: int, order_type: str):
         """
         주문 실행 시 로컬 DB에 저장합니다.

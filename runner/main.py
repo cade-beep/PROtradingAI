@@ -75,9 +75,11 @@ async def main():
         logger.info("안내: 현재 모의/테스트 모드입니다. (LIVE_TRADING_ENABLED=False)")
 
     try:
-        # 1. 초기화 및 의존성 주입
         token_manager = TokenManager()
         account_no = settings.kiwoom_account_no
+        
+        orderable_client = OrderableAmountClient(token_manager)
+        market_data_client = MarketDataClient(token_manager)
         
         order_client = OrderEndpointClient(token_manager)
         validator = PreTradeValidator()
