@@ -4,7 +4,7 @@
 
 ## 프로젝트 개요
 
-이 프로젝트는 Kiwoom 증권 REST API를 활용한 자동매매 시스템입니다. Python 3.11+ 기반으로 구축되었으며, 실시간 시장 데이터 수신, 전략 기반 자동 주문, 리스크 관리, 포트폴리오 추적, Telegram 알림 기능을 제공합니다.
+이 프로젝트는 Kiwoom 증권 REST API를 활용한 자동매매 시스템입니다. Python 3.11+ 기반으로 구축되었으며, 실시간 시장 데이터 수신, 전략 기반 자동 주문, 리스크 관리, 포트폴리오 추적, Discord 웹훅 알림 기능을 제공합니다.
 
 ## 주요 기능
 
@@ -15,7 +15,7 @@
 - **전략 모듈**: 이동평균 크로스오버 기반 매매 전략
 - **포트폴리오 관리**: 현금 및 포지션 추적
 - **리스크 관리**: 포지션 사이즈 및 손실 제한
-- **알림**: Telegram 봇을 통한 실시간 알림
+- **알림**: Discord 웹훅을 통한 실시간 알림
 
 ## 설치 및 설정
 
@@ -36,8 +36,7 @@ pip install -r requirements.txt
 KIWOOM_APP_KEY=your_app_key
 KIWOOM_APP_SECRET=your_app_secret
 KIWOOM_ACCOUNT_NO=your_account_no
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-TELEGRAM_CHAT_ID=your_telegram_chat_id
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
 LIVE_TRADING_ENABLED=false
 ```
 

@@ -5,8 +5,7 @@ class Settings(BaseSettings):
     kiwoom_app_key: str = Field(..., description="Kiwoom App Key")
     kiwoom_app_secret: str = Field(..., description="Kiwoom App Secret")
     kiwoom_account_no: str = Field(..., description="Kiwoom Account Number")
-    telegram_bot_token: str = Field(..., description="Telegram Bot Token")
-    telegram_chat_id: str = Field(..., description="Telegram Chat ID")
+    discord_webhook_url: str = Field(..., description="Discord Webhook URL")
     live_trading_enabled: bool = Field(False, description="Enable Live Trading")
     
     # API endpoints

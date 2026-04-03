@@ -13,7 +13,7 @@ from order.reconciler import OrderReconciler
 from strategy.strategy import TradingStrategy
 from portfolio.portfolio import Portfolio
 from risk.risk import RiskManager
-from notifications.telegram import TelegramNotifier
+from notifications.discord import DiscordNotifier
 
 # 로깅 기본 설정
 logging.basicConfig(
@@ -23,7 +23,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("runner.main")
 
-async def consume_market_data(queue: asyncio.Queue, strategy: TradingStrategy, portfolio: Portfolio, risk: RiskManager, order_client: OrderEndpointClient, validator: PreTradeValidator, reconciler: OrderReconciler, notifier: TelegramNotifier, account_no: str):
+async def consume_market_data(queue: asyncio.Queue, strategy: TradingStrategy, portfolio: Portfolio, risk: RiskManager, order_client: OrderEndpointClient, validator: PreTradeValidator, reconciler: OrderReconciler, notifier: DiscordNotifier, account_no: str):
     """
     웹소켓으로부터 수신된 데이터(Pub/Sub의 Consumer 역할)를 처리하는 태스크
     전략 분석 및 자동 주문 실행
@@ -89,7 +89,7 @@ async def main():
         strategy = TradingStrategy()
         portfolio = Portfolio()
         risk = RiskManager()
-        notifier = TelegramNotifier()
+        notifier = DiscordNotifier()
         
         message_queue = asyncio.Queue()
         ws_client = KiwoomWebSocketClient(token_manager, message_queue)

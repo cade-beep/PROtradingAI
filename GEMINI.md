@@ -11,7 +11,7 @@ Step 5 — Order/fill synchronization (Reconciler)
 - httpx (REST), websockets (WebSocket)
 - pydantic-settings (.env management)
 - SQLite (storage)
-- Telegram (notifications)
+- Discord (notifications via webhook)
 
 ## Rules
 - LIVE_TRADING_ENABLED = False 상태에서만 개발할 것
@@ -24,8 +24,7 @@ Step 5 — Order/fill synchronization (Reconciler)
 KIWOOM_APP_KEY=
 KIWOOM_APP_SECRET=
 KIWOOM_ACCOUNT_NO=
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=
+DISCORD_WEBHOOK_URL=
 LIVE_TRADING_ENABLED=false
 ---
 
