@@ -81,14 +81,23 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# Environments & Secrets
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Local database & sensitive files
+*.db
+orders.db
+.secrets/
+secrets/
+private/
 
 # Spyder project settings
 .spyderproject
