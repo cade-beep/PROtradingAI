@@ -12,3 +12,4 @@ pytz>=2024.1
 python-dateutil>=2.8.2
 python-json-logger>=2.0.7
 websockets>=11.0.0
+apscheduler>=3.10.0
