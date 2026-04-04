@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import websockets
+from websockets.exceptions import ConnectionClosed
 from typing import Set, Optional
 from config.settings import settings
 from auth.token_manager import TokenManager
@@ -59,7 +60,7 @@ class KiwoomWebSocketClient:
                             break
                         await self._handle_message(message)
 
-            except websockets.exceptions.ConnectionClosed as e:
+            except ConnectionClosed as e:
                 logger.warning(f"웹소켓 연결 끊김: {e.code} - {e.reason}")
             except Exception as e:
                 logger.error(f"웹소켓 연결 오류: {str(e)}")

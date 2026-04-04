@@ -26,5 +26,5 @@ USER app
 # Expose port if needed (for future web interface)
 # EXPOSE 8000
 
-# Run the application
-CMD ["python", "runner/main.py"]
+# Run the application as a module to ensure package imports resolve correctly
+CMD ["python", "-m", "runner.main"]

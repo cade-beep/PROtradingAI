@@ -1,0 +1,11 @@
+services:
+  protradingai:
+    build: .
+    container_name: protradingai_app
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    restart: unless-stopped
+    command: python -m runner.main
