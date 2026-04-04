@@ -4,7 +4,7 @@
 kiwoom-auto-trader
 
 ## Current Build Step
-Step 5 — Order/fill synchronization (Reconciler)
+Step 8 — APScheduler-based job scheduling + Health check monitoring (✅ COMPLETE)
 
 ## Stack
 - Python 3.11+
